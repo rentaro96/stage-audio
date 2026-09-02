@@ -5,41 +5,58 @@
 let player = null;
 let playerReady = false;
 
-const localAudio =
-    document.getElementById("localAudio");
-
 let cues = [];
 let currentCueIndex = -1;
-
 let currentSourceType = null;
 
 let selectedFadeTime = 3;
 let fadeInterval = null;
+let toastTimer = null;
+
+const localAudio = document.getElementById("localAudio");
+const nowPlaying = document.getElementById("nowPlaying");
+const playPauseButton = document.getElementById("playPauseButton");
+const stopButton = document.getElementById("stopButton");
+const fadeButton = document.getElementById("fadeButton");
+const volumeSlider = document.getElementById("volumeSlider");
+const volumeValue = document.getElementById("volumeValue");
+const cueList = document.getElementById("cueList");
+const youtubeModeButton = document.getElementById("youtubeModeButton");
+const youtubeAddArea = document.getElementById("youtubeAddArea");
+const youtubeUrlInput = document.getElementById("youtubeUrl");
+const cueNameInput = document.getElementById("cueName");
+const saveCueButton = document.getElementById("saveCueButton");
+const audioFileButton = document.getElementById("audioFileButton");
+const audioFileInput = document.getElementById("audioFileInput");
+const audioFileArea = document.getElementById("audioFileArea");
+const audioFileStatus = document.getElementById("audioFileStatus");
+const customFadeButton = document.getElementById("customFadeButton");
+const customFadeArea = document.getElementById("customFadeArea");
+const customFadeInput = document.getElementById("customFadeInput");
+const addCustomFadeButton = document.getElementById("addCustomFadeButton");
+const previousButton = document.getElementById("previousButton");
+const nextButton = document.getElementById("nextButton");
+const shareButton = document.getElementById("shareButton");
+const sharePanel = document.getElementById("sharePanel");
+const sharePanelMessage = document.getElementById("sharePanelMessage");
+const shareUrlInput = document.getElementById("shareUrlInput");
+const copyShareUrlButton = document.getElementById("copyShareUrlButton");
+const closeSharePanelButton = document.getElementById("closeSharePanelButton");
+const toast = document.getElementById("toast");
 
 
 // =============================================
 // YouTube API
 // =============================================
 
-const youtubeScript =
-    document.createElement("script");
+const youtubeScript = document.createElement("script");
+youtubeScript.src = "https://www.youtube.com/iframe_api";
 
-youtubeScript.src =
-    "https://www.youtube.com/iframe_api";
+const firstScript = document.getElementsByTagName("script")[0];
+firstScript.parentNode.insertBefore(youtubeScript, firstScript);
 
-const firstScript =
-    document.getElementsByTagName("script")[0];
-
-firstScript.parentNode.insertBefore(
-    youtubeScript,
-    firstScript
-);
-
-
-function onYouTubeIframeAPIReady() {
-
+window.onYouTubeIframeAPIReady = function () {
     player = new YT.Player("player", {
-
         width: "100%",
         height: "100%",
 
@@ -50,158 +67,90 @@ function onYouTubeIframeAPIReady() {
         },
 
         events: {
-
             onReady: function () {
-
                 playerReady = true;
-
-                player.setVolume(
-                    getSelectedVolume()
-                );
+                player.setVolume(getSelectedVolume());
             },
 
-            onStateChange:
-                onPlayerStateChange
+            onStateChange: onPlayerStateChange
         }
     });
-}
-
-
-// =============================================
-// YouTube ID
-// =============================================
-
-function getYouTubeID(url) {
-
-    try {
-
-        const parsedUrl =
-            new URL(url);
-
-
-        if (
-            parsedUrl.hostname.includes(
-                "youtu.be"
-            )
-        ) {
-
-            return parsedUrl.pathname
-                .substring(1)
-                .split("/")[0];
-        }
-
-
-        if (
-            parsedUrl.searchParams.get("v")
-        ) {
-
-            return parsedUrl
-                .searchParams
-                .get("v");
-        }
-
-
-        if (
-            parsedUrl.pathname.includes(
-                "/shorts/"
-            )
-        ) {
-
-            return parsedUrl.pathname
-                .split("/shorts/")[1]
-                .split("/")[0];
-        }
-
-
-        if (
-            parsedUrl.pathname.includes(
-                "/embed/"
-            )
-        ) {
-
-            return parsedUrl.pathname
-                .split("/embed/")[1]
-                .split("/")[0];
-        }
-
-    } catch {
-
-        return null;
-    }
-
-
-    return null;
-}
+};
 
 
 // =============================================
 // YouTube CUE追加
 // =============================================
 
-document
-    .getElementById("saveCueButton")
-    .addEventListener(
-        "click",
-        addYouTubeCue
-    );
+saveCueButton.addEventListener("click", addYouTubeCue);
 
+youtubeModeButton.addEventListener("click", function () {
+    youtubeAddArea.classList.remove("hidden");
+    youtubeUrlInput.focus();
+});
 
-function addYouTubeCue() {
+youtubeUrlInput.addEventListener("keydown", addYouTubeCueFromEnter);
+cueNameInput.addEventListener("keydown", addYouTubeCueFromEnter);
 
-    const urlInput =
-        document.getElementById(
-            "youtubeUrl"
-        );
-
-    const nameInput =
-        document.getElementById(
-            "cueName"
-        );
-
-
-    const url =
-        urlInput.value.trim();
-
-    const name =
-        nameInput.value.trim();
-
-    const videoId =
-        getYouTubeID(url);
-
-
-    if (!videoId) {
-
-        alert(
-            "正しいYouTube URLを入力してください。"
-        );
-
+function addYouTubeCueFromEnter(event) {
+    if (event.key !== "Enter") {
         return;
     }
 
+    addYouTubeCue();
+}
+
+function addYouTubeCue() {
+    const url = youtubeUrlInput.value.trim();
+    const name = cueNameInput.value.trim();
+    const videoId = getYouTubeID(url);
+
+    if (!videoId) {
+        alert("正しいYouTube URLを入力してください。");
+        return;
+    }
 
     cues.push({
-
-        id: Date.now(),
-
+        id: makeCueId(),
         type: "youtube",
-
-        name:
-            name ||
-            "名称未設定",
-
+        name: name || "名称未設定",
         url,
-
         videoId
     });
 
-
     saveCues();
-
     renderCueList();
 
+    youtubeUrlInput.value = "";
+    cueNameInput.value = "";
 
-    urlInput.value = "";
-    nameInput.value = "";
+    showToast("YouTubeを追加しました");
+}
+
+function getYouTubeID(url) {
+    try {
+        const parsedUrl = new URL(url);
+
+        if (parsedUrl.hostname.includes("youtu.be")) {
+            return parsedUrl.pathname.substring(1).split("/")[0];
+        }
+
+        if (parsedUrl.searchParams.get("v")) {
+            return parsedUrl.searchParams.get("v");
+        }
+
+        if (parsedUrl.pathname.includes("/shorts/")) {
+            return parsedUrl.pathname.split("/shorts/")[1].split("/")[0];
+        }
+
+        if (parsedUrl.pathname.includes("/embed/")) {
+            return parsedUrl.pathname.split("/embed/")[1].split("/")[0];
+        }
+    } catch {
+        return null;
+    }
+
+    return null;
 }
 
 
@@ -209,85 +158,66 @@ function addYouTubeCue() {
 // ローカル音源追加
 // =============================================
 
-const audioFileInput =
-    document.getElementById(
-        "audioFileInput"
-    );
+audioFileButton.addEventListener("click", function () {
+    showAudioFileArea("ファイル選択画面を開いています。");
+});
 
-
-document
-    .getElementById(
-        "audioFileButton"
-    )
-    .addEventListener(
-        "click",
-        function () {
-
-            audioFileInput.click();
-        }
-    );
-
-
-audioFileInput.addEventListener(
-    "change",
-    function () {
-
-        const file =
-            this.files[0];
-
-
-        if (!file) {
-            return;
-        }
-
-
-        if (
-            !file.type.startsWith("audio/")
-        ) {
-
-            alert(
-                "音声ファイルを選択してください。"
-            );
-
-            return;
-        }
-
-
-        const objectUrl =
-            URL.createObjectURL(file);
-
-
-        cues.push({
-
-            id: Date.now(),
-
-            type: "local",
-
-            name:
-                file.name.replace(
-                    /\.[^/.]+$/,
-                    ""
-                ),
-
-            fileName:
-                file.name,
-
-            objectUrl:
-                objectUrl
-        });
-
-
-        renderCueList();
-
-
-        this.value = "";
-
-
-        showToast(
-            "音源ファイルを追加しました"
-        );
+audioFileButton.addEventListener("keydown", function (event) {
+    if (event.key !== "Enter" && event.key !== " ") {
+        return;
     }
-);
+
+    event.preventDefault();
+    showAudioFileArea("ファイル選択画面を開いています。");
+    audioFileInput.click();
+});
+
+audioFileInput.addEventListener("change", function () {
+    const file = this.files[0];
+
+    if (!file) {
+        showAudioFileArea("ファイル選択がキャンセルされました。");
+        return;
+    }
+
+    if (!isAudioFile(file)) {
+        showAudioFileArea("音声ファイルを選択してください。");
+        alert("音声ファイルを選択してください。");
+        this.value = "";
+        return;
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+    const cueName = file.name.replace(/\.[^/.]+$/, "") || file.name;
+
+    cues.push({
+        id: makeCueId(),
+        type: "local",
+        name: cueName,
+        fileName: file.name,
+        objectUrl
+    });
+
+    renderCueList();
+    showAudioFileArea(`「${file.name}」を追加しました。`);
+
+    this.value = "";
+
+    showToast("音源ファイルを追加しました");
+});
+
+function showAudioFileArea(message) {
+    audioFileArea.classList.remove("hidden");
+    audioFileStatus.textContent = message;
+}
+
+function isAudioFile(file) {
+    if (file.type && file.type.startsWith("audio/")) {
+        return true;
+    }
+
+    return /\.(aac|aif|aiff|flac|m4a|mp3|ogg|wav|weba)$/i.test(file.name);
+}
 
 
 // =============================================
@@ -295,99 +225,57 @@ audioFileInput.addEventListener(
 // =============================================
 
 function renderCueList() {
-
-    const cueList =
-        document.getElementById(
-            "cueList"
-        );
-
-
     if (cues.length === 0) {
-
         cueList.innerHTML = `
-
             <div class="empty-message">
-
                 まだCUEがありません。<br>
-
-                YouTubeまたは音源ファイルを
-                追加してください。
-
+                YouTubeまたは音源ファイルを追加してください。
             </div>
         `;
 
         return;
     }
 
-
     cueList.innerHTML = "";
 
+    cues.forEach((cue, index) => {
+        const item = document.createElement("div");
+        item.className = "cue-item";
 
-    cues.forEach(
-        (cue, index) => {
-
-            const item =
-                document.createElement(
-                    "div"
-                );
-
-
-            item.className =
-                "cue-item";
-
-
-            if (
-                index ===
-                currentCueIndex
-            ) {
-
-                item.classList.add(
-                    "current"
-                );
-            }
-
-
-            const typeName =
-                cue.type === "youtube"
-                    ? "YouTube"
-                    : "AUDIO";
-
-
-            item.innerHTML = `
-
-                <div class="cue-number">
-                    ${String(index + 1)
-                        .padStart(2, "0")}
-                </div>
-
-                <div class="cue-type">
-                    ${typeName}
-                </div>
-
-                <div class="cue-name">
-                    ${escapeHTML(cue.name)}
-                </div>
-
-                <button
-                    onclick="playCue(${index})"
-                >
-                    ▶ 再生
-                </button>
-
-                <button
-                    class="delete-button"
-                    onclick="deleteCue(${index})"
-                >
-                    ×
-                </button>
-            `;
-
-
-            cueList.appendChild(
-                item
-            );
+        if (index === currentCueIndex) {
+            item.classList.add("current");
         }
-    );
+
+        const number = document.createElement("div");
+        number.className = "cue-number";
+        number.textContent = String(index + 1).padStart(2, "0");
+
+        const type = document.createElement("div");
+        type.className = "cue-type";
+        type.textContent = cue.type === "youtube" ? "YouTube" : "AUDIO";
+
+        const name = document.createElement("div");
+        name.className = "cue-name";
+        name.textContent = cue.name;
+
+        const playButton = document.createElement("button");
+        playButton.type = "button";
+        playButton.textContent = "▶ 再生";
+        playButton.addEventListener("click", function () {
+            playCue(index);
+        });
+
+        const deleteButton = document.createElement("button");
+        deleteButton.type = "button";
+        deleteButton.className = "delete-button";
+        deleteButton.textContent = "×";
+        deleteButton.addEventListener("click", function () {
+            deleteCue(index);
+        });
+
+        item.append(number, type, name, playButton, deleteButton);
+        cueList.appendChild(item);
+    });
 }
 
 
@@ -396,99 +284,48 @@ function renderCueList() {
 // =============================================
 
 function playCue(index) {
-
-    const cue =
-        cues[index];
-
+    const cue = cues[index];
 
     if (!cue) {
         return;
     }
 
-
     cancelFade();
-
     stopEverything(false);
 
+    currentCueIndex = index;
+    currentSourceType = cue.type;
+    nowPlaying.textContent = cue.name;
 
-    currentCueIndex =
-        index;
+    const volume = getSelectedVolume();
 
-    currentSourceType =
-        cue.type;
-
-
-    document.getElementById(
-        "nowPlaying"
-    ).textContent =
-        cue.name;
-
-
-    const volume =
-        getSelectedVolume();
-
-
-    if (
-        cue.type === "youtube"
-    ) {
-
+    if (cue.type === "youtube") {
         if (!playerReady) {
-
-            alert(
-                "YouTubeプレイヤーを準備中です。"
-            );
-
+            showToast("YouTubeプレイヤーを準備中です");
             return;
         }
-
 
         localAudio.pause();
-
-
-        player.setVolume(
-            volume
-        );
-
-
-        player.loadVideoById(
-            cue.videoId
-        );
-
+        player.setVolume(volume);
+        player.loadVideoById(cue.videoId);
     } else {
-
         if (!cue.objectUrl) {
-
-            alert(
-                "この音源ファイルをもう一度追加してください。"
-            );
-
+            alert("この音源ファイルをもう一度追加してください。");
             return;
         }
-
 
         if (playerReady) {
             player.stopVideo();
         }
 
-
-        localAudio.src =
-            cue.objectUrl;
-
-        localAudio.volume =
-            volume / 100;
-
+        localAudio.src = cue.objectUrl;
+        localAudio.volume = volume / 100;
         localAudio.currentTime = 0;
 
-
-        localAudio.play()
-            .catch(() => {
-
-                alert(
-                    "音源を再生できませんでした。"
-                );
-            });
+        localAudio.play().catch(() => {
+            alert("音源を再生できませんでした。");
+        });
     }
-
 
     renderCueList();
 }
@@ -498,67 +335,36 @@ function playCue(index) {
 // PLAY / PAUSE
 // =============================================
 
-document
-    .getElementById(
-        "playPauseButton"
-    )
-    .addEventListener(
-        "click",
-        togglePlayPause
-    );
-
+playPauseButton.addEventListener("click", togglePlayPause);
 
 function togglePlayPause() {
-
-    if (
-        currentCueIndex === -1
-    ) {
-
+    if (currentCueIndex === -1) {
         if (cues.length > 0) {
             playCue(0);
+        } else {
+            showToast("先に音源を追加してください");
         }
 
         return;
     }
 
-
-    if (
-        currentSourceType ===
-        "youtube"
-    ) {
-
+    if (currentSourceType === "youtube") {
         if (!playerReady) {
+            showToast("YouTubeプレイヤーを準備中です");
             return;
         }
 
+        const state = player.getPlayerState();
 
-        const state =
-            player.getPlayerState();
-
-
-        if (
-            state ===
-            YT.PlayerState.PLAYING
-        ) {
-
+        if (state === YT.PlayerState.PLAYING) {
             player.pauseVideo();
-
         } else {
-
             player.playVideo();
         }
-
-    } else if (
-        currentSourceType ===
-        "local"
-    ) {
-
+    } else if (currentSourceType === "local") {
         if (localAudio.paused) {
-
             localAudio.play();
-
         } else {
-
             localAudio.pause();
         }
     }
@@ -569,41 +375,26 @@ function togglePlayPause() {
 // STOP
 // =============================================
 
-document
-    .getElementById(
-        "stopButton"
-    )
-    .addEventListener(
-        "click",
-        function () {
+stopButton.addEventListener("click", function () {
+    cancelFade();
+    stopEverything(true);
+});
 
-            cancelFade();
-
-            stopEverything(true);
-        }
-    );
-
-
-function stopEverything(
-    resetButton = true
-) {
-
+function stopEverything(resetButton = true) {
     if (playerReady) {
         player.stopVideo();
     }
 
-
     localAudio.pause();
 
-    localAudio.currentTime = 0;
-
+    try {
+        localAudio.currentTime = 0;
+    } catch {
+        // Some browsers reject seeking before a source is ready.
+    }
 
     if (resetButton) {
-
-        document.getElementById(
-            "playPauseButton"
-        ).textContent =
-            "▶ 再生";
+        playPauseButton.textContent = "▶ 再生";
     }
 }
 
@@ -612,69 +403,32 @@ function stopEverything(
 // VOLUME
 // =============================================
 
-const volumeSlider =
-    document.getElementById(
-        "volumeSlider"
-    );
+volumeSlider.addEventListener("input", function () {
+    const volume = Number(this.value);
 
-
-volumeSlider.addEventListener(
-    "input",
-    function () {
-
-        const volume =
-            Number(this.value);
-
-
-        updateVolumeDisplay(
-            volume
-        );
-
-
-        if (
-            currentSourceType ===
-            "youtube" &&
-            playerReady
-        ) {
-
-            player.setVolume(
-                volume
-            );
-        }
-
-
-        if (
-            currentSourceType ===
-            "local"
-        ) {
-
-            localAudio.volume =
-                volume / 100;
-        }
-    }
-);
-
+    updateVolumeDisplay(volume);
+    setCurrentVolume(volume);
+});
 
 function getSelectedVolume() {
-
-    return Number(
-        volumeSlider.value
-    );
+    return Number(volumeSlider.value);
 }
 
+function updateVolumeDisplay(volume) {
+    const roundedVolume = Math.round(volume);
 
-function updateVolumeDisplay(
-    volume
-) {
+    volumeSlider.value = roundedVolume;
+    volumeValue.textContent = roundedVolume + "%";
+}
 
-    volumeSlider.value =
-        volume;
+function setCurrentVolume(volume) {
+    if (currentSourceType === "youtube" && playerReady) {
+        player.setVolume(volume);
+    }
 
-    document.getElementById(
-        "volumeValue"
-    ).textContent =
-        Math.round(volume) +
-        "%";
+    if (currentSourceType === "local") {
+        localAudio.volume = volume / 100;
+    }
 }
 
 
@@ -682,52 +436,19 @@ function updateVolumeDisplay(
 // FADE TIME
 // =============================================
 
-document
-    .querySelectorAll(
-        ".fade-time"
-    )
-    .forEach(
-        button => {
+document.querySelectorAll(".fade-time").forEach(button => {
+    button.addEventListener("click", function () {
+        selectFadeButton(this);
+    });
+});
 
-            button.addEventListener(
-                "click",
-                function () {
+function selectFadeButton(selectedButton) {
+    document.querySelectorAll(".fade-time").forEach(button => {
+        button.classList.remove("active");
+    });
 
-                    selectFadeButton(
-                        this
-                    );
-
-                    selectedFadeTime =
-                        Number(
-                            this.dataset.time
-                        );
-                }
-            );
-        }
-    );
-
-
-function selectFadeButton(
-    selectedButton
-) {
-
-    document
-        .querySelectorAll(
-            ".fade-time"
-        )
-        .forEach(
-            button => {
-
-                button.classList.remove(
-                    "active"
-                );
-            }
-        );
-
-
-    selectedButton.classList.add(
-        "active"
-    );
+    selectedButton.classList.add("active");
+    selectedFadeTime = Number(selectedButton.dataset.time);
 }
 
 
@@ -735,124 +456,62 @@ function selectFadeButton(
 // CUSTOM FADE
 // =============================================
 
-document
-    .getElementById(
-        "customFadeButton"
-    )
-    .addEventListener(
-        "click",
-        function () {
+customFadeButton.addEventListener("click", function () {
+    if (customFadeArea.classList.contains("hidden")) {
+        openCustomFadeArea();
+    } else {
+        closeCustomFadeArea();
+    }
+});
 
-            document
-                .getElementById(
-                    "customFadeArea"
-                )
-                .classList
-                .toggle("hidden");
-        }
-    );
+addCustomFadeButton.addEventListener("click", addCustomFade);
 
-
-document
-    .getElementById(
-        "addCustomFadeButton"
-    )
-    .addEventListener(
-        "click",
-        addCustomFade
-    );
-
-
-function addCustomFade() {
-
-    const input =
-        document.getElementById(
-            "customFadeInput"
-        );
-
-
-    const seconds =
-        Number(input.value);
-
-
-    if (
-        !seconds ||
-        seconds < 0.5 ||
-        seconds > 120
-    ) {
-
-        alert(
-            "0.5〜120秒で入力してください。"
-        );
-
+customFadeInput.addEventListener("keydown", function (event) {
+    if (event.key !== "Enter") {
         return;
     }
 
+    addCustomFade();
+});
 
-    const button =
-        document.createElement(
-            "button"
-        );
+function openCustomFadeArea() {
+    customFadeArea.classList.remove("hidden");
+    customFadeButton.classList.add("active");
+    customFadeButton.setAttribute("aria-expanded", "true");
+    customFadeInput.focus();
+}
 
+function closeCustomFadeArea() {
+    customFadeArea.classList.add("hidden");
+    customFadeButton.classList.remove("active");
+    customFadeButton.setAttribute("aria-expanded", "false");
+}
 
-    button.className =
-        "fade-time active";
+function addCustomFade() {
+    const seconds = Number(customFadeInput.value);
 
-    button.dataset.time =
-        seconds;
+    if (!seconds || seconds < 0.5 || seconds > 120) {
+        alert("0.5〜120秒で入力してください。");
+        customFadeInput.focus();
+        return;
+    }
 
-    button.textContent =
-        seconds + "秒";
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "fade-time";
+    button.dataset.time = String(seconds);
+    button.textContent = seconds + "秒";
+    button.addEventListener("click", function () {
+        selectFadeButton(this);
+    });
 
+    customFadeButton.before(button);
+    selectFadeButton(button);
 
-    document
-        .querySelectorAll(
-            ".fade-time"
-        )
-        .forEach(
-            btn =>
-                btn.classList.remove(
-                    "active"
-                )
-        );
+    customFadeInput.value = "";
+    closeCustomFadeArea();
 
-
-    button.addEventListener(
-        "click",
-        function () {
-
-            selectFadeButton(
-                this
-            );
-
-            selectedFadeTime =
-                Number(
-                    this.dataset.time
-                );
-        }
-    );
-
-
-    document
-        .getElementById(
-            "customFadeButton"
-        )
-        .before(button);
-
-
-    selectedFadeTime =
-        seconds;
-
-
-    input.value = "";
-
-
-    document
-        .getElementById(
-            "customFadeArea"
-        )
-        .classList
-        .add("hidden");
+    showToast(`${seconds}秒FADEを追加しました`);
 }
 
 
@@ -860,240 +519,84 @@ function addCustomFade() {
 // FADE OUT
 // =============================================
 
-document
-    .getElementById(
-        "fadeButton"
-    )
-    .addEventListener(
-        "click",
-        fadeOut
-    );
-
+fadeButton.addEventListener("click", fadeOut);
 
 function fadeOut() {
-
-    if (
-        currentCueIndex === -1
-    ) {
-
+    if (currentCueIndex === -1) {
+        showToast("先に音源を再生してください");
         return;
     }
-
 
     cancelFade();
 
+    const originalVolume = getSelectedVolume();
 
-    // FADE開始時の音量を保存
-    const originalVolume =
-        getSelectedVolume();
-
-
-    if (
-        originalVolume <= 0
-    ) {
-
+    if (originalVolume <= 0) {
+        showToast("音量が0%です");
         return;
     }
 
-
     const steps = 40;
-
-    const interval =
-        selectedFadeTime *
-        1000 /
-        steps;
-
-
+    const interval = selectedFadeTime * 1000 / steps;
     let step = 0;
 
+    fadeInterval = setInterval(() => {
+        step++;
 
-    fadeInterval =
-        setInterval(
-            () => {
+        const safeVolume = Math.max(0, originalVolume * (1 - step / steps));
 
-                step++;
+        updateVolumeDisplay(safeVolume);
+        setCurrentVolume(safeVolume);
 
+        if (step >= steps) {
+            clearInterval(fadeInterval);
+            fadeInterval = null;
 
-                const newVolume =
-                    originalVolume *
-                    (
-                        1 -
-                        step /
-                        steps
-                    );
+            stopEverything(true);
+            updateVolumeDisplay(originalVolume);
 
+            if (playerReady) {
+                player.setVolume(originalVolume);
+            }
 
-                const safeVolume =
-                    Math.max(
-                        0,
-                        newVolume
-                    );
-
-
-                // 表示も徐々に下げる
-                updateVolumeDisplay(
-                    safeVolume
-                );
-
-
-                if (
-                    currentSourceType ===
-                    "youtube" &&
-                    playerReady
-                ) {
-
-                    player.setVolume(
-                        safeVolume
-                    );
-                }
-
-
-                if (
-                    currentSourceType ===
-                    "local"
-                ) {
-
-                    localAudio.volume =
-                        safeVolume / 100;
-                }
-
-
-                if (
-                    step >= steps
-                ) {
-
-                    clearInterval(
-                        fadeInterval
-                    );
-
-                    fadeInterval =
-                        null;
-
-
-                    // 完全停止
-                    stopEverything(true);
-
-
-                    // 元の音量に戻す
-                    updateVolumeDisplay(
-                        originalVolume
-                    );
-
-
-                    if (playerReady) {
-
-                        player.setVolume(
-                            originalVolume
-                        );
-                    }
-
-
-                    localAudio.volume =
-                        originalVolume /
-                        100;
-                }
-
-            },
-            interval
-        );
+            localAudio.volume = originalVolume / 100;
+        }
+    }, interval);
 }
 
-
-// =============================================
-// FADE CANCEL
-// =============================================
-
 function cancelFade() {
-
     if (!fadeInterval) {
         return;
     }
 
-
-    clearInterval(
-        fadeInterval
-    );
-
-    fadeInterval =
-        null;
+    clearInterval(fadeInterval);
+    fadeInterval = null;
 }
 
 
 // =============================================
-// NEXT
+// NEXT / PREVIOUS
 // =============================================
 
-document
-    .getElementById(
-        "nextButton"
-    )
-    .addEventListener(
-        "click",
-        function () {
+nextButton.addEventListener("click", function () {
+    if (cues.length === 0) {
+        showToast("先に音源を追加してください");
+        return;
+    }
 
-            if (
-                cues.length === 0
-            ) {
+    const next = currentCueIndex + 1 >= cues.length ? 0 : currentCueIndex + 1;
+    playCue(next);
+});
 
-                return;
-            }
+previousButton.addEventListener("click", function () {
+    if (cues.length === 0) {
+        showToast("先に音源を追加してください");
+        return;
+    }
 
-
-            let next =
-                currentCueIndex + 1;
-
-
-            if (
-                next >= cues.length
-            ) {
-
-                next = 0;
-            }
-
-
-            playCue(next);
-        }
-    );
-
-
-// =============================================
-// PREVIOUS
-// =============================================
-
-document
-    .getElementById(
-        "previousButton"
-    )
-    .addEventListener(
-        "click",
-        function () {
-
-            if (
-                cues.length === 0
-            ) {
-
-                return;
-            }
-
-
-            let previous =
-                currentCueIndex - 1;
-
-
-            if (
-                previous < 0
-            ) {
-
-                previous =
-                    cues.length - 1;
-            }
-
-
-            playCue(
-                previous
-            );
-        }
-    );
+    const previous = currentCueIndex - 1 < 0 ? cues.length - 1 : currentCueIndex - 1;
+    playCue(previous);
+});
 
 
 // =============================================
@@ -1101,72 +604,33 @@ document
 // =============================================
 
 function deleteCue(index) {
-
-    const cue =
-        cues[index];
-
+    const cue = cues[index];
 
     if (!cue) {
         return;
     }
 
-
-    if (
-        !confirm(
-            `「${cue.name}」を削除しますか？`
-        )
-    ) {
-
+    if (!confirm(`「${cue.name}」を削除しますか？`)) {
         return;
     }
 
-
-    if (
-        cue.type === "local" &&
-        cue.objectUrl
-    ) {
-
-        URL.revokeObjectURL(
-            cue.objectUrl
-        );
+    if (cue.type === "local" && cue.objectUrl) {
+        URL.revokeObjectURL(cue.objectUrl);
     }
 
-
-    if (
-        index ===
-        currentCueIndex
-    ) {
-
+    if (index === currentCueIndex) {
         stopEverything(true);
 
-        currentCueIndex =
-            -1;
-
-        currentSourceType =
-            null;
-
-        document.getElementById(
-            "nowPlaying"
-        ).textContent =
-            "まだ再生されていません";
-
-    } else if (
-        index <
-        currentCueIndex
-    ) {
-
+        currentCueIndex = -1;
+        currentSourceType = null;
+        nowPlaying.textContent = "まだ再生されていません";
+    } else if (index < currentCueIndex) {
         currentCueIndex--;
     }
 
-
-    cues.splice(
-        index,
-        1
-    );
-
+    cues.splice(index, 1);
 
     saveCues();
-
     renderCueList();
 }
 
@@ -1175,102 +639,137 @@ function deleteCue(index) {
 // PLAYER STATES
 // =============================================
 
-function onPlayerStateChange(
-    event
-) {
-
-    if (
-        currentSourceType !==
-        "youtube"
-    ) {
-
+function onPlayerStateChange(event) {
+    if (currentSourceType !== "youtube") {
         return;
     }
 
-
-    const button =
-        document.getElementById(
-            "playPauseButton"
-        );
-
-
-    if (
-        event.data ===
-        YT.PlayerState.PLAYING
-    ) {
-
-        button.textContent =
-            "⏸ 一時停止";
-
+    if (event.data === YT.PlayerState.PLAYING) {
+        playPauseButton.textContent = "⏸ 一時停止";
     } else {
-
-        button.textContent =
-            "▶ 再生";
+        playPauseButton.textContent = "▶ 再生";
     }
 }
 
+localAudio.addEventListener("play", function () {
+    playPauseButton.textContent = "⏸ 一時停止";
+});
 
-localAudio.addEventListener(
-    "play",
-    function () {
-
-        document.getElementById(
-            "playPauseButton"
-        ).textContent =
-            "⏸ 一時停止";
-    }
-);
-
-
-localAudio.addEventListener(
-    "pause",
-    function () {
-
-        document.getElementById(
-            "playPauseButton"
-        ).textContent =
-            "▶ 再生";
-    }
-);
+localAudio.addEventListener("pause", function () {
+    playPauseButton.textContent = "▶ 再生";
+});
 
 
 // =============================================
 // SHARE
 // =============================================
 
-document
-    .getElementById(
-        "shareButton"
-    )
-    .addEventListener(
-        "click",
-        shareSite
-    );
-
+shareButton.addEventListener("click", shareSite);
+copyShareUrlButton.addEventListener("click", copyShareUrlFromPanel);
+closeSharePanelButton.addEventListener("click", closeSharePanel);
 
 async function shareSite() {
+    const url = window.location.href;
 
-    const url =
-        window.location.href;
+    if (canUseNativeShare(url)) {
+        try {
+            await navigator.share({
+                title: document.title,
+                text: "Stage Audio",
+                url
+            });
 
+            showToast("共有画面を開きました");
+            return;
+        } catch (error) {
+            if (error.name === "AbortError") {
+                showSharePanel(url, "共有をキャンセルしました。URLはこちらです。");
+                return;
+            }
+        }
+    }
+
+    const copied = await copyText(url);
+
+    if (copied) {
+        showSharePanel(url, "共有URLをコピーしました。");
+        showToast("共有URLをコピーしました");
+    } else {
+        showSharePanel(url, "このURLを選択してコピーしてください。");
+        shareUrlInput.select();
+    }
+}
+
+function canUseNativeShare(url) {
+    if (!navigator.share || window.location.protocol === "file:") {
+        return false;
+    }
+
+    if (!navigator.canShare) {
+        return true;
+    }
+
+    return navigator.canShare({
+        title: document.title,
+        text: "Stage Audio",
+        url
+    });
+}
+
+async function copyShareUrlFromPanel() {
+    const copied = await copyText(shareUrlInput.value);
+
+    if (copied) {
+        showSharePanel(shareUrlInput.value, "共有URLをコピーしました。");
+        showToast("共有URLをコピーしました");
+    } else {
+        shareUrlInput.select();
+        showToast("URLを選択しました");
+    }
+}
+
+async function copyText(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+        try {
+            await navigator.clipboard.writeText(text);
+            return true;
+        } catch {
+            // Fall back to the temporary text field below.
+        }
+    }
+
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.setAttribute("readonly", "");
+    textArea.style.position = "fixed";
+    textArea.style.left = "-9999px";
+    textArea.style.top = "0";
+
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+
+    let copied = false;
 
     try {
-
-        await navigator.clipboard
-            .writeText(url);
-
-
-        showToast(
-            "共有URLをコピーしました"
-        );
-
+        copied = document.execCommand("copy");
     } catch {
-
-        prompt(
-            "このURLをコピーしてください",
-            url
-        );
+        copied = false;
     }
+
+    textArea.remove();
+
+    return copied;
+}
+
+function showSharePanel(url, message) {
+    shareUrlInput.value = url;
+    sharePanelMessage.textContent = message;
+    sharePanel.classList.remove("hidden");
+}
+
+function closeSharePanel() {
+    sharePanel.classList.add("hidden");
 }
 
 
@@ -1279,31 +778,14 @@ async function shareSite() {
 // =============================================
 
 function showToast(message) {
+    toast.textContent = message;
+    toast.classList.add("show");
 
-    const toast =
-        document.getElementById(
-            "toast"
-        );
+    clearTimeout(toastTimer);
 
-
-    toast.textContent =
-        message;
-
-    toast.classList.add(
-        "show"
-    );
-
-
-    setTimeout(
-        () => {
-
-            toast.classList.remove(
-                "show"
-            );
-
-        },
-        2200
-    );
+    toastTimer = setTimeout(() => {
+        toast.classList.remove("show");
+    }, 2200);
 }
 
 
@@ -1312,69 +794,35 @@ function showToast(message) {
 // =============================================
 
 function saveCues() {
-
-    // ローカルファイルはブラウザを閉じると
-    // objectUrlが使えなくなるため保存しない
-
-    const youtubeCues =
-        cues.filter(
-            cue =>
-                cue.type ===
-                "youtube"
-        );
-
+    const youtubeCues = cues.filter(cue => cue.type === "youtube");
 
     localStorage.setItem(
         "stageAudioCues",
-        JSON.stringify(
-            youtubeCues
-        )
+        JSON.stringify(youtubeCues)
     );
 }
 
-
 function loadCues() {
-
-    const saved =
-        localStorage.getItem(
-            "stageAudioCues"
-        );
-
+    const saved = localStorage.getItem("stageAudioCues");
 
     if (!saved) {
         return;
     }
 
-
     try {
-
-        cues =
-            JSON.parse(saved);
-
+        cues = JSON.parse(saved);
     } catch {
-
         cues = [];
     }
 }
 
 
 // =============================================
-// SECURITY
+// HELPERS
 // =============================================
 
-function escapeHTML(text) {
-
-    const div =
-        document.createElement(
-            "div"
-        );
-
-
-    div.textContent =
-        text;
-
-
-    return div.innerHTML;
+function makeCueId() {
+    return Date.now() + Math.floor(Math.random() * 1000);
 }
 
 
@@ -1382,6 +830,7 @@ function escapeHTML(text) {
 // START
 // =============================================
 
-loadCues();
+customFadeButton.setAttribute("aria-expanded", "false");
 
+loadCues();
 renderCueList();

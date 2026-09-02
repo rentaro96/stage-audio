@@ -169,12 +169,15 @@
                     ＋ YouTube
                 </button>
 
-                <button
+                <label
                     id="audioFileButton"
                     class="file-button"
+                    for="audioFileInput"
+                    role="button"
+                    tabindex="0"
                 >
                     ＋ 音源ファイル
-                </button>
+                </label>
 
             </div>
 
@@ -213,8 +216,27 @@
             id="audioFileInput"
             type="file"
             accept="audio/*"
-            hidden
+            class="visually-hidden-file"
         >
+
+
+        <div
+            id="audioFileArea"
+            class="file-add-area hidden"
+        >
+
+            <span id="audioFileStatus">
+                音源ファイルを選択してください。
+            </span>
+
+            <label
+                class="file-picker-label"
+                for="audioFileInput"
+            >
+                ファイルを選ぶ
+            </label>
+
+        </div>
 
 
         <div id="cueList">
@@ -249,6 +271,43 @@
     class="toast"
 >
     URLをコピーしました
+</div>
+
+
+<div
+    id="sharePanel"
+    class="share-panel hidden"
+    aria-live="polite"
+>
+
+    <div class="share-panel-header">
+        <strong>共有URL</strong>
+
+        <button
+            id="closeSharePanelButton"
+            class="icon-button"
+            aria-label="共有パネルを閉じる"
+        >
+            ×
+        </button>
+    </div>
+
+    <p id="sharePanelMessage">
+        このURLを共有できます。
+    </p>
+
+    <div class="share-url-row">
+        <input
+            id="shareUrlInput"
+            type="text"
+            readonly
+        >
+
+        <button id="copyShareUrlButton">
+            コピー
+        </button>
+    </div>
+
 </div>
 
 
