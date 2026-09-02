@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Stage Audio</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <header>
+        <div>
+            <h1>STAGE AUDIO</h1>
+            <p>文化祭 音響コントローラー</p>
+        </div>
+
+        <div class="status">
+            <span class="status-dot"></span>
+            READY
+        </div>
+    </header>
+
+
+    <main>
+
+        <!-- 現在再生中 -->
+        <section class="player-section">
+
+            <p class="section-label">NOW PLAYING</p>
+
+            <h2 id="nowPlaying">
+                まだ再生されていません
+            </h2>
+
+            <!-- YouTubeプレイヤー -->
+            <div id="player"></div>
+
+
+            <!-- メイン操作 -->
+            <div class="main-controls">
+
+                <button id="playPauseButton" class="control-button">
+                    ▶ 再生
+                </button>
+
+                <button id="stopButton" class="control-button">
+                    ■ STOP
+                </button>
+
+                <button id="fadeButton" class="fade-button">
+                    ↘ FADE OUT
+                </button>
+
+            </div>
+
+
+            <!-- 音量 -->
+            <div class="volume-area">
+
+                <span>🔊</span>
+
+                <input
+                    type="range"
+                    id="volumeSlider"
+                    min="0"
+                    max="100"
+                    value="80"
+                >
+
+                <span id="volumeValue">
+                    80%
+                </span>
+
+            </div>
+
+
+            <!-- フェード時間 -->
+            <div class="fade-settings">
+
+                <span>FADE</span>
+
+                <button class="fade-time" data-time="1">
+                    1秒
+                </button>
+
+                <button class="fade-time active" data-time="3">
+                    3秒
+                </button>
+
+                <button class="fade-time" data-time="5">
+                    5秒
+                </button>
+
+                <button class="fade-time" data-time="10">
+                    10秒
+                </button>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- CUEリスト -->
+        <section class="cue-section">
+
+            <div class="cue-header">
+
+                <div>
+                    <p class="section-label">
+                        CUE LIST
+                    </p>
+
+                    <h2>音源リスト</h2>
+                </div>
+
+                <button id="addCueButton" class="add-button">
+                    ＋ YouTubeを追加
+                </button>
+
+            </div>
+
+
+            <!-- URL追加 -->
+            <div id="addCueArea" class="add-cue-area">
+
+                <input
+                    id="youtubeUrl"
+                    type="text"
+                    placeholder="YouTube URLを貼り付け"
+                >
+
+                <input
+                    id="cueName"
+                    type="text"
+                    placeholder="名前（例：ハク登場）"
+                >
+
+                <button id="saveCueButton">
+                    追加
+                </button>
+
+            </div>
+
+
+            <!-- ここに曲が追加される -->
+            <div id="cueList">
+
+                <div class="empty-message">
+                    まだCUEがありません。<br>
+                    YouTubeのURLを追加してください。
+                </div>
+
+            </div>
+
+
+            <!-- 前・次 -->
+            <div class="next-controls">
+
+                <button id="previousButton">
+                    ← PREVIOUS
+                </button>
+
+                <button id="nextButton">
+                    NEXT CUE →
+                </button>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- JavaScript -->
+    <script src="script.js"></script>
+
+</body>
+</html>
