@@ -18,6 +18,7 @@ let fadeInterval = null;
 let endCheckTimer = null;
 let toastTimer = null;
 let draggedCueId = null;
+const expandedCueIds = new Set();
 
 const localAudio = document.getElementById("localAudio");
 const nowPlaying = document.getElementById("nowPlaying");
@@ -254,9 +255,11 @@ function renderCueList() {
     cues.forEach((cue, index) => {
         normalizeCue(cue);
 
+        const isDetailsOpen = expandedCueIds.has(cue.id);
         const item = document.createElement("div");
         item.className = "cue-item";
         item.dataset.cueId = String(cue.id);
+        item.classList.toggle("details-open", isDetailsOpen);
 
         if (index === currentCueIndex) {
             item.classList.add("current");
@@ -313,6 +316,20 @@ function renderCueList() {
             playCue(index);
         });
 
+        const expandButton = document.createElement("button");
+        expandButton.type = "button";
+        expandButton.className = "cue-expand-button";
+        expandButton.textContent = "⌄";
+        expandButton.setAttribute(
+            "aria-label",
+            `${cue.name}の設定を${isDetailsOpen ? "閉じる" : "開く"}`
+        );
+        expandButton.setAttribute("aria-expanded", String(isDetailsOpen));
+        expandButton.setAttribute("aria-controls", `cue-settings-${cue.id}`);
+        expandButton.addEventListener("click", function () {
+            toggleCueDetails(cue.id);
+        });
+
         const moveUpButton = document.createElement("button");
         moveUpButton.type = "button";
         moveUpButton.className = "move-button";
@@ -342,17 +359,22 @@ function renderCueList() {
             deleteCue(index);
         });
 
-        actions.append(playButton, moveUpButton, moveDownButton, deleteButton);
+        actions.append(playButton, expandButton, moveUpButton, moveDownButton, deleteButton);
         mainRow.append(dragHandle, number, type, titleBlock, actions);
 
-        item.append(mainRow, createCueSettings(cue, index));
+        item.append(mainRow, createCueSettings(cue, index, isDetailsOpen));
         cueList.appendChild(item);
     });
 }
 
-function createCueSettings(cue, index) {
+function createCueSettings(cue, index, isDetailsOpen) {
     const settings = document.createElement("div");
     settings.className = "cue-settings-row";
+    settings.id = `cue-settings-${cue.id}`;
+
+    if (!isDetailsOpen) {
+        settings.classList.add("hidden");
+    }
 
     const volumeControl = document.createElement("label");
     volumeControl.className = "cue-setting cue-volume-setting";
@@ -396,6 +418,16 @@ function createCueSettings(cue, index) {
     settings.append(volumeControl, startControl, endControl);
 
     return settings;
+}
+
+function toggleCueDetails(cueId) {
+    if (expandedCueIds.has(cueId)) {
+        expandedCueIds.delete(cueId);
+    } else {
+        expandedCueIds.add(cueId);
+    }
+
+    renderCueList();
 }
 
 function createTimeControl(cue, index, field, labelText, value) {
@@ -1040,6 +1072,8 @@ function deleteCue(index) {
     if (!confirm(`「${cue.name}」を削除しますか？`)) {
         return;
     }
+
+    expandedCueIds.delete(cue.id);
 
     if (cue.type === "local" && cue.objectUrl) {
         URL.revokeObjectURL(cue.objectUrl);

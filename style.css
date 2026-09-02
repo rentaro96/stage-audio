@@ -459,7 +459,14 @@ input:focus {
 }
 
 .cue-title-block {
+    display: flex;
+    align-items: center;
+
+    gap: 12px;
+
     min-width: 0;
+
+    flex-wrap: wrap;
 }
 
 .cue-name {
@@ -468,7 +475,7 @@ input:focus {
 }
 
 .cue-meta {
-    margin-top: 5px;
+    margin-top: 0;
 
     color: #7f8996;
 
@@ -489,6 +496,26 @@ input:focus {
     width: 40px;
 
     padding: 10px 0;
+}
+
+.cue-expand-button {
+    width: 40px;
+
+    padding: 10px 0;
+
+    font-size: 22px;
+    line-height: 1;
+
+    transition:
+        background 0.15s,
+        transform 0.15s;
+}
+
+.cue-item.details-open .cue-expand-button {
+    color: #0b0d10;
+    background: #f0b429;
+
+    transform: rotate(180deg);
 }
 
 .delete-button {
@@ -518,6 +545,10 @@ button:disabled:hover {
 
     margin-top: 14px;
     padding: 0 15px;
+}
+
+.cue-settings-row.hidden {
+    display: none;
 }
 
 .cue-setting {
@@ -696,6 +727,7 @@ body.performance-mode .add-cue-area,
 body.performance-mode .file-add-area,
 body.performance-mode .cue-settings-row,
 body.performance-mode .cue-drag-handle,
+body.performance-mode .cue-expand-button,
 body.performance-mode .move-button,
 body.performance-mode .delete-button {
     display: none;
@@ -801,6 +833,14 @@ body.performance-mode .cue-actions button {
         grid-column: 1 / -1;
 
         justify-content: flex-start;
+    }
+
+    .cue-title-block {
+        display: block;
+    }
+
+    .cue-meta {
+        margin-top: 5px;
     }
 
     .cue-settings-row {
