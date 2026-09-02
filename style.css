@@ -193,6 +193,15 @@ input:focus-visible {
     background: #252b33;
 }
 
+.performance-button {
+    color: #0b0d10;
+    background: #f0b429;
+}
+
+.performance-button:hover {
+    background: #ffca3d;
+}
+
 .add-button {
     background: #4568ff;
 }
@@ -386,18 +395,52 @@ input:focus {
 }
 
 .cue-item {
-    display: flex;
-    align-items: center;
-
-    gap: 15px;
-
-    padding: 15px;
+    padding: 16px 0;
 
     border-bottom: 1px solid #252a31;
 }
 
 .cue-item.current {
     background: #1c2330;
+}
+
+.cue-item.drag-over {
+    background: #171f2e;
+    box-shadow: inset 0 0 0 2px #5877ff;
+}
+
+.cue-item.dragging {
+    opacity: 0.55;
+}
+
+.cue-main-row {
+    display: grid;
+    grid-template-columns:
+        40px
+        38px
+        78px
+        minmax(0, 1fr)
+        auto;
+    align-items: center;
+
+    gap: 12px;
+
+    padding: 0 15px;
+}
+
+.cue-drag-handle {
+    width: 36px;
+    height: 36px;
+
+    padding: 0;
+
+    color: #a9b3c0;
+
+    cursor: grab;
+}
+
+.cue-drag-handle:active {
+    cursor: grabbing;
 }
 
 .cue-number {
@@ -409,24 +452,114 @@ input:focus {
 }
 
 .cue-type {
-    min-width: 70px;
-
     color: #8993a0;
 
     font-size: 11px;
     font-weight: bold;
 }
 
-.cue-name {
-    flex: 1;
+.cue-title-block {
+    min-width: 0;
+}
 
+.cue-name {
     font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.cue-meta {
+    margin-top: 5px;
+
+    color: #7f8996;
+
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.cue-actions {
+    display: flex;
+    justify-content: flex-end;
+
+    gap: 8px;
+
+    flex-wrap: wrap;
+}
+
+.move-button {
+    width: 40px;
+
+    padding: 10px 0;
 }
 
 .delete-button {
     padding: 10px 14px;
 
     color: #ff8585;
+}
+
+button:disabled {
+    opacity: 0.35;
+
+    cursor: not-allowed;
+}
+
+button:disabled:hover {
+    transform: none;
+}
+
+.cue-settings-row {
+    display: grid;
+    grid-template-columns:
+        minmax(220px, 1.2fr)
+        minmax(150px, 0.6fr)
+        minmax(150px, 0.6fr);
+
+    gap: 10px;
+
+    margin-top: 14px;
+    padding: 0 15px;
+}
+
+.cue-setting {
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+
+    min-width: 0;
+    padding: 10px 12px;
+
+    color: #a9b3c0;
+    background: #0d1014;
+
+    border: 1px solid #252a31;
+    border-radius: 8px;
+
+    font-size: 13px;
+}
+
+.cue-setting > span:first-child {
+    color: #7f8996;
+
+    font-weight: bold;
+}
+
+.cue-volume-setting input {
+    flex: 1;
+
+    min-width: 100px;
+}
+
+.cue-volume-value {
+    min-width: 42px;
+
+    color: white;
+
+    text-align: right;
+}
+
+.cue-time-input {
+    width: 92px;
 }
 
 .empty-message {
@@ -547,6 +680,67 @@ input:focus {
 }
 
 
+/* PERFORMANCE MODE */
+
+body.performance-mode main {
+    width: min(1280px, 96%);
+}
+
+body.performance-mode .performance-button {
+    color: white;
+    background: #4568ff;
+}
+
+body.performance-mode .cue-add-buttons,
+body.performance-mode .add-cue-area,
+body.performance-mode .file-add-area,
+body.performance-mode .cue-settings-row,
+body.performance-mode .cue-drag-handle,
+body.performance-mode .move-button,
+body.performance-mode .delete-button {
+    display: none;
+}
+
+body.performance-mode .player-section h2 {
+    font-size: 52px;
+    line-height: 1.1;
+}
+
+body.performance-mode .main-controls {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+
+    gap: 16px;
+}
+
+body.performance-mode .main-controls button,
+body.performance-mode .next-controls button {
+    min-height: 76px;
+
+    font-size: 22px;
+}
+
+body.performance-mode .next-controls {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+}
+
+body.performance-mode .cue-main-row {
+    grid-template-columns:
+        48px
+        86px
+        minmax(0, 1fr)
+        auto;
+}
+
+body.performance-mode .cue-actions button {
+    min-width: 120px;
+    min-height: 54px;
+
+    font-size: 18px;
+}
+
+
 /* MOBILE */
 
 @media (max-width: 700px) {
@@ -557,6 +751,9 @@ input:focus {
 
     .header-actions {
         gap: 10px;
+
+        flex-wrap: wrap;
+        justify-content: flex-end;
     }
 
     .status {
@@ -590,12 +787,32 @@ input:focus {
         width: 100%;
     }
 
-    .cue-item {
+    .cue-main-row {
+        grid-template-columns:
+            36px
+            34px
+            66px
+            minmax(0, 1fr);
+
+        gap: 10px;
+    }
+
+    .cue-actions {
+        grid-column: 1 / -1;
+
+        justify-content: flex-start;
+    }
+
+    .cue-settings-row {
+        grid-template-columns: 1fr;
+    }
+
+    .cue-setting {
         flex-wrap: wrap;
     }
 
-    .cue-name {
-        min-width: 50%;
+    .cue-volume-setting input {
+        width: 100%;
     }
 
     .share-panel {
@@ -604,5 +821,25 @@ input:focus {
         top: 92px;
 
         width: auto;
+    }
+
+    body.performance-mode .player-section h2 {
+        font-size: 34px;
+    }
+
+    body.performance-mode .main-controls,
+    body.performance-mode .next-controls {
+        grid-template-columns: 1fr;
+    }
+
+    body.performance-mode .cue-main-row {
+        grid-template-columns:
+            38px
+            76px
+            minmax(0, 1fr);
+    }
+
+    body.performance-mode .cue-actions button {
+        width: 100%;
     }
 }
